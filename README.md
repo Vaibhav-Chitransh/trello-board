@@ -36,10 +36,12 @@ const boards = [{
 const issues = [{
     id: 1,
     title: "add role based access controls",
+    state: "IN_PROGRESS",
     boardId: 1
 }, {
     id: 2,
     title: "allow admins with more functionalities",
+    state: "DONE",
     boardId: 1
 }];
 ```
