@@ -50,9 +50,16 @@ app.post('/organization', authMiddleware, (req, res) => {
     res.status(201).json({message: "Organization created successfully", id: ORGANIZATION_ID - 1});
 });
 
-// /board?organizationId=2   ->  Board will be related to some organization which I will pass as query params
-app.post('/board', (req, res) => {
+app.post('/board', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const title = req.body.title;
+    const organizationId = req.body.organizationId;
 
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
+
+    BOARDS.push({id: BOARD_ID++, title, organizationId});
+    res.status(201).json({message: "Board created successfully", id: BOARD_ID - 1});
 });
 
 app.post('/add-member-to-organization', authMiddleware, (req, res) => {
