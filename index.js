@@ -1,15 +1,29 @@
 const express = require('express');
 const app = express();
 
-const users = [];
-const organizations = [];
-const boards = [];
-const issues = [];
+let USER_ID = 1;
+let ORGANIZATION_ID = 1;
+let BOARD_ID = 1;
+let ISSUE_ID = 1;
+
+const USERS = [];
+const ORGANIZATIONS = [];
+const BOARDS = [];
+const ISSUES = [];
+
+app.use(express.json());
 
 // CREATE
 
 app.post('/signup', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
 
+    const userExist = USERS.find((user) => user.username == username);
+    if(userExist) return res.status(403).json({message: "User with this username already exists"});
+
+    USERS.push({id: USER_ID++, username, password});
+    res.status(201).json({message: "You have signed up successfully"});
 });
 
 app.post('/signin', (req, res) => {
