@@ -108,8 +108,21 @@ app.get('/organization', authMiddleware, (req, res) => {
     }})
 });
 
-app.get('/boards', (req, res) => {
+// user will send the organizationId as query params so that we can fetch all those boards under that organization
+app.get('/boards', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const organizationId = parseInt(req.query.organizationId);
 
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    if(!organization) return res.status(403).json({message: "Organization does not exist"});
+
+    const boards = BOARDS.filter((board) => board.organizationId === organizationId);
+    return res.status(200).json(boards.map((board) => {
+        return {
+            id: board.id,
+            title: board.title
+        }
+    }));
 });
 
 app.get('/issues', (req, res) => {
