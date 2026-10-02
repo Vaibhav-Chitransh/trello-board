@@ -40,7 +40,14 @@ app.post('/signin', (req, res) => {
 });
 
 app.post('/organization', authMiddleware, (req, res) => {
-    
+    const userId = req.userId;
+    const title = req.body.title;
+    const description = req.body.description;
+
+    // we can add validation here also on title and description (like it should not be empty but that we will do later)
+
+    ORGANIZATIONS.push({id: ORGANIZATION_ID++, title, description, admin: userId, members: []});
+    res.status(201).json({message: "Organization created successfully", id: ORGANIZATION_ID - 1});
 });
 
 // /board?organizationId=2   ->  Board will be related to some organization which I will pass as query params
