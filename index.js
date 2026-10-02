@@ -84,7 +84,7 @@ app.post('/issue', (req, res) => {
 // user will send the organizationId as query params
 app.get('/organization', authMiddleware, (req, res) => {
     const userId = req.userId;
-    const organizationId = req.query.organizationId;
+    const organizationId = parseInt(req.query.organizationId);
 
     const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
     if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
