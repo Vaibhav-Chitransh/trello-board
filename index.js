@@ -149,8 +149,22 @@ app.get('/boards', authMiddleware, (req, res) => {
     }));
 });
 
-app.get('/issues', (req, res) => {
+// we will get boardId as query param so that we can fetch all issues of that particular board
+app.get('/issues', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const boardId = parseInt(req.query.boardId);
 
+    const board = BOARDS.find((board) => board.id === boardId);
+    if(!board) return res.status(403).json({message: "Board does not exist"});
+
+    const issues = ISSUES.filter((issue) => issue.boardId === boardId);
+    return res.status(200).json(issues.map((issue) => {
+        return {
+            id: issue.id,
+            title: issue.title,
+            state: issue.state
+        }
+    }));
 });
 
 app.get('/members', (req, res) => {
