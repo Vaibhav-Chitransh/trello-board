@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const { authMiddleware } = require('./middleware.js');
 const app = express();
 
 let USER_ID = 1;
@@ -38,8 +39,8 @@ app.post('/signin', (req, res) => {
     res.status(200).json({token});
 });
 
-app.post('/organization', (req, res) => {
-
+app.post('/organization', authMiddleware, (req, res) => {
+    
 });
 
 // /board?organizationId=2   ->  Board will be related to some organization which I will pass as query params
