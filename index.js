@@ -81,8 +81,24 @@ app.post('/issue', (req, res) => {
 
 // READ
 
-app.get('/organization', (req, res) => {
+// user will send the organizationId as query params
+app.get('/organization', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const organizationId = req.query.organizationId;
 
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
+
+    res.status(200).json({organization: {
+        ...organization,
+        members: organization.members.map((memberId) => {
+            const user = USERS.find((user) => user.id === memberId);
+            return {
+                id: user.id,
+                username: user.username
+            }
+        })
+    }})
 });
 
 app.get('/boards', (req, res) => {
