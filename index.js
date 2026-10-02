@@ -174,8 +174,33 @@ app.get('/members', (req, res) => {
 // UPDATE
 
 // move this issue (change the state)
-app.put('/issues', (req, res) => {
+app.put('/issues', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const issueId = req.body.issueId;
 
+    const issue = ISSUES.find((issue) => issue.id === issueId);
+    if(!issue) return res.status(403).json({message: "Issue does not exist"});
+
+    const boardId = issue.boardId;   // if there is an issue then the boardId will be correct itself because at the time of creation it must be linked to some board so no need to validate whether the boardId is valid or not => we can directly get the organization to which it belongs to
+
+    const board = BOARDS.find((board) => board.id === boardId);
+    const organizationId = board.organizationId;
+
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+
+    // only admin or a member can update the issue so check whether the current user is an admin or a member
+    const isAdmin = userId === organization.admin;
+    const isMember = organization.members.includes(userId);
+
+    if(!isAdmin && !isMember) return res.status(403).json({message: "You are not authorized to udpate this issue"});
+
+    // update the issue state to next state
+    if(issue.state === issueStates.UP_NEXT) issue.state = issueStates.IN_PROGRESS;
+    else if(issue.state === issueStates.IN_PROGRESS) issue.state = issueStates.DONE;
+    else if(issue.state === issueStates.DONE) issue.state = issueStates.ARCHIVE;
+    else if(issue.state === issueStates.ARCHIVE) return res.status(403).json({message: "Issue already resolved and not in board"});
+
+    res.status(200).json({message: "Issue state updated"});
 })
 
 // DELETE
