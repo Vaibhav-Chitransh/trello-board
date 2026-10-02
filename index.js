@@ -55,8 +55,22 @@ app.post('/board', (req, res) => {
 
 });
 
-app.post('/add-member-to-organization', (req, res) => {
+app.post('/add-member-to-organization', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const organizationId = req.body.organizationId;
+    const memberUserUsername = req.body.memberUserUsername;
 
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
+
+    const memberUser = USERS.find((user) => user.username === memberUserUsername);
+    if(!memberUser) return res.status(403).json({message: "No user with this username exists in our DB"});
+
+    const memberAlreadyExist = organization.members.find((memberId) => memberId === memberUser.id);
+    if(memberAlreadyExist) return res.status(403).json({message: "This member is already a part of this organization"});
+
+    organization.members.push(memberUser.id);
+    res.status(200).json({message: "New member added"});
 });
 
 // /issue?boardId=2    -> Issue will be related to some board that I will pass as query params
