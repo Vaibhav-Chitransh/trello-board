@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const app = express();
 
 let USER_ID = 1;
@@ -19,7 +20,7 @@ app.post('/signup', (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
-    const userExist = USERS.find((user) => user.username == username);
+    const userExist = USERS.find((user) => user.username === username);
     if(userExist) return res.status(403).json({message: "User with this username already exists"});
 
     USERS.push({id: USER_ID++, username, password});
@@ -27,7 +28,14 @@ app.post('/signup', (req, res) => {
 });
 
 app.post('/signin', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
 
+    const userExist = USERS.find((user) => user.username === username && user.password === password);
+    if(!userExist) return res.status(403).json({message: 'User not found'});
+
+    const token = jwt.sign({userId: userExist.id}, "SECRET123");
+    res.status(200).json({token});
 });
 
 app.post('/organization', (req, res) => {
