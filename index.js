@@ -107,8 +107,22 @@ app.put('/issues', (req, res) => {
 // DELETE
 
 // remove some member
-app.delete('/members', (req, res) => {
+app.delete('/members', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const organizationId = req.body.organizationId;
+    const memberUserUsername = req.body.memberUserUsername;
 
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
+
+    const memberUser = USERS.find((user) => user.username === memberUserUsername);
+    if(!memberUser) return res.status(403).json({message: "No user with this username exists in our DB"});
+
+    const memberExist = organization.members.find((memberId) => memberId === memberUser.id);
+    if(!memberExist) return res.status(403).json({message: "This member does not exist in the organization"});
+
+    organization.members = organization.members.filter((memberId) => memberId !== memberUser.id);
+    res.status(200).json({message: "Member removed from the organization!"});
 })
 
 app.listen(3000);
