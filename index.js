@@ -13,6 +13,14 @@ const ORGANIZATIONS = [];
 const BOARDS = [];
 const ISSUES = [];
 
+// Issue states => IN_PROGRESS, UP_NEXT, DONE, ARCHIVE
+const issueStates = {
+    IN_PROGRESS: "IN_PROGRESS",
+    UP_NEXT: "UP_NEXT",
+    DONE: "DONE",
+    ARCHIVE: "ARCHIVE"
+}
+
 app.use(express.json());
 
 // CREATE
@@ -80,10 +88,26 @@ app.post('/add-member-to-organization', authMiddleware, (req, res) => {
     res.status(200).json({message: "New member added"});
 });
 
-// /issue?boardId=2    -> Issue will be related to some board that I will pass as query params
-// you can also do /issue/:boardId
-app.post('/issue', (req, res) => {
+app.post('/issue', authMiddleware, (req, res) => {
+    const userId = req.userId;
+    const title = req.body.title;
+    const boardId = req.body.boardId;
 
+    const board = BOARDS.find((board) => board.id === boardId);
+    if(!board) return res.status(403).json({message: "Board does not exist"});
+
+    // only members/admin of the board's organization can create the issue
+    const organizationId = board.organizationId;
+    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    if(!organization) return res.status(403).json({message: "Board does not belong to any organization"});
+
+    const isAdmin = userId === organization.admin;
+    const isMember = organization.members.includes(userId);
+
+    if(!isAdmin && !isMember) return res.status(403).json({message: "You are not authorized to create issue"});
+    
+    ISSUES.push({id: ISSUE_ID++, title, state: issueStates.UP_NEXT, boardId});
+    res.status(201).json({message: "Issue created successfully", id: ISSUE_ID - 1});
 });
 
 // READ
