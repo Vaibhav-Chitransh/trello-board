@@ -26,22 +26,25 @@ app.use(express.json());
 
 // CREATE
 
-app.post('/signup', (req, res) => {
+app.post('/signup', async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
-    const userExist = USERS.find((user) => user.username === username);
+    // const userExist = USERS.find((user) => user.username === username);
+    const userExist = await USERS.findOne({username: username});
     if(userExist) return res.status(403).json({message: "User with this username already exists"});
 
-    USERS.push({id: USER_ID++, username, password});
-    res.status(201).json({message: "You have signed up successfully"});
+    // USERS.push({id: USER_ID++, username, password});
+    const user = await USERS.create({username, password});
+    res.status(201).json({message: "You have signed up successfully", id: user._id});
 });
 
-app.post('/signin', (req, res) => {
+app.post('/signin', async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
-    const userExist = USERS.find((user) => user.username === username && user.password === password);
+    // const userExist = USERS.find((user) => user.username === username && user.password === password);
+    const userExist = await USERS.findOne({username: username, password: password});
     if(!userExist) return res.status(403).json({message: 'User not found'});
 
     const token = jwt.sign({userId: userExist.id}, "SECRET123");
