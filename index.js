@@ -51,15 +51,16 @@ app.post('/signin', async (req, res) => {
     res.status(200).json({token});
 });
 
-app.post('/organization', authMiddleware, (req, res) => {
+app.post('/organization', authMiddleware, async (req, res) => {
     const userId = req.userId;
     const title = req.body.title;
     const description = req.body.description;
 
     // we can add validation here also on title and description (like it should not be empty but that we will do later)
 
-    ORGANIZATIONS.push({id: ORGANIZATION_ID++, title, description, admin: userId, members: []});
-    res.status(201).json({message: "Organization created successfully", id: ORGANIZATION_ID - 1});
+    // ORGANIZATIONS.push({id: ORGANIZATION_ID++, title, description, admin: userId, members: []});
+    const organization = await ORGANIZATIONS.create({title: title, description: description, admin: userId, members: []});
+    res.status(201).json({message: "Organization created successfully", id: organization._id});
 });
 
 app.post('/board', authMiddleware, (req, res) => {
