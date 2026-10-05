@@ -220,21 +220,28 @@ app.put('/issues', authMiddleware, (req, res) => {
 // DELETE
 
 // remove some member
-app.delete('/members', authMiddleware, (req, res) => {
+app.delete('/members', authMiddleware, async (req, res) => {
     const userId = req.userId;
     const organizationId = req.body.organizationId;
     const memberUserUsername = req.body.memberUserUsername;
 
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
     if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
 
-    const memberUser = USERS.find((user) => user.username === memberUserUsername);
+    // const memberUser = USERS.find((user) => user.username === memberUserUsername);
+    const memberUser = await USERS.findOne({username: memberUserUsername});
     if(!memberUser) return res.status(403).json({message: "No user with this username exists in our DB"});
 
     const memberExist = organization.members.find((memberId) => memberId === memberUser.id);
     if(!memberExist) return res.status(403).json({message: "This member does not exist in the organization"});
 
-    organization.members = organization.members.filter((memberId) => memberId !== memberUser.id);
+    // organization.members = organization.members.filter((memberId) => memberId !== memberUser.id);
+    await ORGANIZATIONS.findOneAndUpdate({_id: organizationId}, {
+        $pullAll: {
+            members: memberUser._id,
+        }
+    })
     res.status(200).json({message: "Member removed from the organization!"});
 })
 
