@@ -102,26 +102,29 @@ app.post('/add-member-to-organization', authMiddleware, async (req, res) => {
     res.status(200).json({message: "New member added"});
 });
 
-app.post('/issue', authMiddleware, (req, res) => {
+app.post('/issue', authMiddleware, async (req, res) => {
     const userId = req.userId;
     const title = req.body.title;
     const boardId = req.body.boardId;
 
-    const board = BOARDS.find((board) => board.id === boardId);
+    // const board = BOARDS.find((board) => board.id === boardId);
+    const board = await BOARDS.findOne({_id: boardId});
     if(!board) return res.status(403).json({message: "Board does not exist"});
 
     // only members/admin of the board's organization can create the issue
     const organizationId = board.organizationId;
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
     if(!organization) return res.status(403).json({message: "Board does not belong to any organization"});
 
-    const isAdmin = userId === organization.admin;
-    const isMember = organization.members.includes(userId);
+    const isAdmin = userId === organization.admin.toString();
+    const isMember = organization.members.includes(userId.toString());
 
     if(!isAdmin && !isMember) return res.status(403).json({message: "You are not authorized to create issue"});
     
-    ISSUES.push({id: ISSUE_ID++, title, state: issueStates.UP_NEXT, boardId});
-    res.status(201).json({message: "Issue created successfully", id: ISSUE_ID - 1});
+    // ISSUES.push({id: ISSUE_ID++, title, state: issueStates.UP_NEXT, boardId});
+    const issue = await ISSUES.create({title: title, boardId: boardId});
+    res.status(201).json({message: "Issue created successfully", id: issue._id});
 });
 
 // READ
@@ -156,14 +159,16 @@ app.get('/organization', authMiddleware, async (req, res) => {
 });
 
 // user will send the organizationId as query params so that we can fetch all those boards under that organization
-app.get('/boards', authMiddleware, (req, res) => {
+app.get('/boards', authMiddleware, async (req, res) => {
     const userId = req.userId;
-    const organizationId = parseInt(req.query.organizationId);
+    const organizationId = req.query.organizationId;
 
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
     if(!organization) return res.status(403).json({message: "Organization does not exist"});
 
-    const boards = BOARDS.filter((board) => board.organizationId === organizationId);
+    // const boards = BOARDS.filter((board) => board.organizationId === organizationId);
+    const boards = await BOARDS.find({organizationId: organizationId});
     return res.status(200).json(boards.map((board) => {
         return {
             id: board.id,
@@ -173,14 +178,16 @@ app.get('/boards', authMiddleware, (req, res) => {
 });
 
 // we will get boardId as query param so that we can fetch all issues of that particular board
-app.get('/issues', authMiddleware, (req, res) => {
+app.get('/issues', authMiddleware, async (req, res) => {
     const userId = req.userId;
-    const boardId = parseInt(req.query.boardId);
+    const boardId = req.query.boardId;
 
-    const board = BOARDS.find((board) => board.id === boardId);
+    // const board = BOARDS.find((board) => board.id === boardId);
+    const board = await BOARDS.findOne({_id: boardId});
     if(!board) return res.status(403).json({message: "Board does not exist"});
 
-    const issues = ISSUES.filter((issue) => issue.boardId === boardId);
+    // const issues = ISSUES.filter((issue) => issue.boardId === boardId);
+    const issues = await ISSUES.find({boardId: boardId});
     return res.status(200).json(issues.map((issue) => {
         return {
             id: issue.id,
@@ -190,30 +197,29 @@ app.get('/issues', authMiddleware, (req, res) => {
     }));
 });
 
-app.get('/members', (req, res) => {
-
-});
-
 // UPDATE
 
 // move this issue (change the state)
-app.put('/issues', authMiddleware, (req, res) => {
+app.put('/issues', authMiddleware, async (req, res) => {
     const userId = req.userId;
     const issueId = req.body.issueId;
 
-    const issue = ISSUES.find((issue) => issue.id === issueId);
+    // const issue = ISSUES.find((issue) => issue.id === issueId);
+    const issue = await ISSUES.findOne({_id: issueId});
     if(!issue) return res.status(403).json({message: "Issue does not exist"});
 
     const boardId = issue.boardId;   // if there is an issue then the boardId will be correct itself because at the time of creation it must be linked to some board so no need to validate whether the boardId is valid or not => we can directly get the organization to which it belongs to
 
-    const board = BOARDS.find((board) => board.id === boardId);
+    // const board = BOARDS.find((board) => board.id === boardId);
+    const board = await BOARDS.findOne({_id: boardId});
     const organizationId = board.organizationId;
 
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
 
     // only admin or a member can update the issue so check whether the current user is an admin or a member
-    const isAdmin = userId === organization.admin;
-    const isMember = organization.members.includes(userId);
+    const isAdmin = userId === organization.admin.toString();
+    const isMember = organization.members.includes(userId.toString());
 
     if(!isAdmin && !isMember) return res.status(403).json({message: "You are not authorized to udpate this issue"});
 
@@ -222,6 +228,8 @@ app.put('/issues', authMiddleware, (req, res) => {
     else if(issue.state === issueStates.IN_PROGRESS) issue.state = issueStates.DONE;
     else if(issue.state === issueStates.DONE) issue.state = issueStates.ARCHIVE;
     else if(issue.state === issueStates.ARCHIVE) return res.status(403).json({message: "Issue already resolved and not in board"});
+
+    await issue.save();
 
     res.status(200).json({message: "Issue state updated"});
 })
