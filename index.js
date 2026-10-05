@@ -125,19 +125,21 @@ app.post('/issue', authMiddleware, (req, res) => {
 // READ
 
 // user will send the organizationId as query params
-app.get('/organization', authMiddleware, (req, res) => {
+app.get('/organization', authMiddleware, async (req, res) => {
     const userId = req.userId;
-    const organizationId = parseInt(req.query.organizationId);
+    const organizationId = req.query.organizationId;
 
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
     if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
 
     res.status(200).json({organization: {
         ...organization,
-        members: organization.members.map((memberId) => {
-            const user = USERS.find((user) => user.id === memberId);
+        members: organization.members.map(async (memberId) => {
+            // const user = USERS.find((user) => user.id === memberId);
+            const user = await USERS.findOne({_id: memberId});
             return {
-                id: user.id,
+                _id: user.id,
                 username: user.username
             }
         })
