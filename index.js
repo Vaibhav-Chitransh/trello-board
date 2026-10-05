@@ -133,15 +133,19 @@ app.get('/organization', authMiddleware, async (req, res) => {
     const organization = await ORGANIZATIONS.findOne({_id: organizationId});
     if(!organization || organization.admin.toString() !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
 
-    const organizationMembers = await Promise.all(
-        organization.members.map(async (memberId) => {
-            const user = await USERS.findOne({_id: memberId});
-            return {
-                _id: user._id,
-                username: user.username
-            }
-        })
-    )
+    // const organizationMembers = await Promise.all(
+    //     organization.members.map(async (memberId) => {
+    //         const user = await USERS.findOne({_id: memberId});
+    //         return {
+    //             _id: user._id,
+    //             username: user.username
+    //         }
+    //     })
+    // )
+
+    const organizationMembers = await USERS.find({
+        _id: organization.members
+    })
 
     res.status(200).json({organization: {
         ...organization.toObject(),
