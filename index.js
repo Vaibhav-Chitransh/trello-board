@@ -75,21 +75,28 @@ app.post('/board', authMiddleware, (req, res) => {
     res.status(201).json({message: "Board created successfully", id: BOARD_ID - 1});
 });
 
-app.post('/add-member-to-organization', authMiddleware, (req, res) => {
+app.post('/add-member-to-organization', authMiddleware, async (req, res) => {
     const userId = req.userId;
     const organizationId = req.body.organizationId;
     const memberUserUsername = req.body.memberUserUsername;
 
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
     if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
 
-    const memberUser = USERS.find((user) => user.username === memberUserUsername);
+    // const memberUser = USERS.find((user) => user.username === memberUserUsername);
+    const memberUser = await USERS.findOne({username: memberUserUsername});
     if(!memberUser) return res.status(403).json({message: "No user with this username exists in our DB"});
 
     const memberAlreadyExist = organization.members.find((memberId) => memberId === memberUser.id);
     if(memberAlreadyExist) return res.status(403).json({message: "This member is already a part of this organization"});
 
-    organization.members.push(memberUser.id);
+    // organization.members.push(memberUser.id);
+    await ORGANIZATIONS.updateOne({_id: organizationId}, {
+        $push: {
+            "members": memberUser._id,
+        }
+    })
     res.status(200).json({message: "New member added"});
 });
 
