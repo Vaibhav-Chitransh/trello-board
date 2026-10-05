@@ -1,18 +1,18 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { authMiddleware } = require('./middleware.js');
-const { USERS, ORGANIZATIONS } = require("./models.js");
+const { USERS, ORGANIZATIONS, BOARDS, ISSUES } = require("./models.js");
 const app = express();
 
 // let USER_ID = 1;
 // let ORGANIZATION_ID = 1;
-let BOARD_ID = 1;
-let ISSUE_ID = 1;
+// let BOARD_ID = 1;
+// let ISSUE_ID = 1;
 
 // const USERS = [];
 // const ORGANIZATIONS = [];
-const BOARDS = [];
-const ISSUES = [];
+// const BOARDS = [];
+// const ISSUES = [];
 
 // Issue states => IN_PROGRESS, UP_NEXT, DONE, ARCHIVE
 const issueStates = {
@@ -63,16 +63,18 @@ app.post('/organization', authMiddleware, async (req, res) => {
     res.status(201).json({message: "Organization created successfully", id: organization._id});
 });
 
-app.post('/board', authMiddleware, (req, res) => {
+app.post('/board', authMiddleware, async (req, res) => {
     const userId = req.userId;
     const title = req.body.title;
     const organizationId = req.body.organizationId;
 
-    const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
-    if(!organization || organization.admin !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
+    // const organization = ORGANIZATIONS.find((org) => org.id === organizationId);
+    const organization = await ORGANIZATIONS.findOne({_id: organizationId});
+    if(!organization || organization.admin.toString() !== userId) return res.status(403).json({message: "Either org doesn't exist or you are not an admin of this org"});
 
-    BOARDS.push({id: BOARD_ID++, title, organizationId});
-    res.status(201).json({message: "Board created successfully", id: BOARD_ID - 1});
+    // BOARDS.push({id: BOARD_ID++, title, organizationId});
+    const board = await BOARDS.create({title: title, organizationId: organizationId});
+    res.status(201).json({message: "Board created successfully", id: board._id});
 });
 
 app.post('/add-member-to-organization', authMiddleware, async (req, res) => {
