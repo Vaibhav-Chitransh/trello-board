@@ -45,3 +45,7 @@ const issues = [{
     boardId: 1
 }];
 ```
+
+## UI Design
+
+![ui_image](assets/ui_design.png)
