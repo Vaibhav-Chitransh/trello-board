@@ -48,4 +48,4 @@ const issues = [{
 
 ## UI Design
 
-![ui_image](assets/ui_design.png)
+![ui_image](ui_design.png)
